@@ -4,7 +4,7 @@
 #  参考 ShellCrash 安装模式
 #
 #  远程安装:
-#    sh -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/mizuka-wu/mirouter-tailscale@main/install.sh?$(date +%s))"
+#    curl -fsSL https://raw.githubusercontent.com/mizuka-wu/mirouter-tailscale/main/install.sh -o /tmp/ts_install.sh && sh /tmp/ts_install.sh
 # ===========================================
 
 echo ""
@@ -42,33 +42,29 @@ select_mirror() {
     local tar_file="mirouter-tailscale.tar.gz"
 
     cecho "\033[33m请选择安装源：\033[0m"
-    cecho " 1 \033[32mjsdelivr CDN\033[0m        (国内推荐)"
-    cecho " 2 \033[36mtestingcf.jsdelivr\033[0m (国内备用)"
-    cecho " 3 \033[36mghfast.top\033[0m          (GitHub 代理)"
-    cecho " 4 \033[36mghproxy.cn\033[0m           (GitHub 代理)"
-    cecho " 5 \033[33mGitHub 直连\033[0m          (需科学上网)"
-    cecho " 6 \033[33m手动输入\033[0m"
+    cecho " 1 \033[32mGitHub Raw\033[0m          (推荐)"
+    cecho " 2 \033[36mghfast.top 代理\033[0m    (国内备用)"
+    cecho " 3 \033[36mghproxy.cn 代理\033[0m    (国内备用)"
+    cecho " 4 \033[33mjsdelivr CDN\033[0m        (可能有缓存)"
+    cecho " 5 \033[33m手动输入\033[0m"
     cecho " 0 退出安装"
     echo "-----------------------------------------------"
     read -p "请输入相应数字 > " num
 
     case "$num" in
     1)
-        SELECTED_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/${tar_file}?$(date +%s)"
-        ;;
-    2)
-        SELECTED_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/${tar_file}?$(date +%s)"
-        ;;
-    3)
-        SELECTED_URL="https://ghfast.top/https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
-        ;;
-    4)
-        SELECTED_URL="https://ghproxy.cn/https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
-        ;;
-    5)
         SELECTED_URL="https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
         ;;
-    6)
+    2)
+        SELECTED_URL="https://ghfast.top/https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
+        ;;
+    3)
+        SELECTED_URL="https://ghproxy.cn/https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
+        ;;
+    4)
+        SELECTED_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/${tar_file}?$(date +%s)"
+        ;;
+    5)
         read -p "请输入安装包 URL (tar.gz): " SELECTED_URL
         ;;
     *)
@@ -163,6 +159,7 @@ detect_subnet() {
 gettar() {
     cecho "正在下载安装文件..."
     rm -f /tmp/ts_install.tar.gz
+    rm -rf "$TSDIR/scripts" 2>/dev/null
 
     webget /tmp/ts_install.tar.gz "$SELECTED_URL"
 
@@ -176,8 +173,6 @@ gettar() {
 
     cecho "下载完成，正在解压..."
     mkdir -p "$TSDIR"
-    # 清理旧脚本，确保新版覆盖
-    rm -rf "$TSDIR/scripts" 2>/dev/null
     tar -zxf /tmp/ts_install.tar.gz -C "$TSDIR/" 2>/dev/null
 
     if [ ! -f "$TSDIR/scripts/menu.sh" ]; then
