@@ -7,7 +7,7 @@
 #    sh install.sh
 #
 #  远程安装 (任选一个源):
-#    sh -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/mizuka-wu/mirouter-tailscale@main/install.sh)"
+#    sh -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/mizuka-wu/mirouter-tailscale@main/install.sh?$(date +%s))"
 #    sh -c "$(curl -fsSL https://raw.githubusercontent.com/mizuka-wu/mirouter-tailscale/main/install.sh)"
 # ===========================================
 
@@ -62,11 +62,11 @@ select_mirror() {
 
     case "$num" in
     1)
-        SELECTED_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/${tar_file}"
+        SELECTED_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/${tar_file}?$(date +%s)"
         REMOTE_INSTALL_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/install.sh"
         ;;
     2)
-        SELECTED_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/${tar_file}"
+        SELECTED_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/${tar_file}?$(date +%s)"
         REMOTE_INSTALL_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/install.sh"
         ;;
     3)

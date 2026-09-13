@@ -1,6 +1,5 @@
 #!/bin/sh
 # Tailscale 初始化脚本 (参考 ShellCrash init.sh)
-# 在安装后首次运行时执行
 
 [ -z "$TSDIR" ] && TSDIR="/data/tailscale"
 CFG_PATH="$TSDIR/configs/ts.cfg"
@@ -35,13 +34,10 @@ done
 # 设置环境变量和别名
 profile="/etc/profile"
 if [ -n "$profile" ]; then
-    # 移除旧条目
     sed -i '/alias tsm=/d' "$profile" 2>/dev/null
     sed -i '/export TSDIR=/d' "$profile" 2>/dev/null
-    # 写入新条目
     echo "export TSDIR=$TSDIR" >>"$profile"
     echo "alias tsm='$TSDIR/scripts/menu.sh'" >>"$profile"
-    # 适配 zsh
     if [ -w "$HOME/.zshrc" ]; then
         sed -i '/alias tsm=/d' "$HOME/.zshrc" 2>/dev/null
         sed -i '/export TSDIR=/d' "$HOME/.zshrc" 2>/dev/null
@@ -50,8 +46,8 @@ if [ -n "$profile" ]; then
     fi
 fi
 
-# 创建快捷命令
-if [ -d /usr/bin ]; then
+# 创建快捷命令 (小米 /usr/bin 只读，静默失败)
+if [ -w /usr/bin ]; then
     cat > /usr/bin/tsm << 'CMDEOF'
 #!/bin/sh
 TSDIR=${TSDIR:-/data/tailscale}
@@ -61,32 +57,26 @@ CMDEOF
     chmod +x /usr/bin/tsm 2>/dev/null
 fi
 
-# 保守模式启动脚本 (非小米设备 / 备用方案)
+# 保守模式启动脚本
 cat > "$TSDIR/starts/start_legacy.sh" << 'LEGEOF'
 #!/bin/sh
-# 保守模式: 通过 cron 轮询启动
 TSDIR="${TSDIR:-/data/tailscale}"
 MONITOR="$TSDIR/starts/monitor.sh"
-
-# 设置 cron 守护
 sed -i '/ts_monitor/d' /etc/crontabs/root 2>/dev/null
 echo "* * * * * $MONITOR >/dev/null 2>&1 #ts_monitor" >> /etc/crontabs/root
-
-# 部分系统 cron 目录不同
 if [ -d /data/etc/crontabs ]; then
     sed -i '/ts_monitor/d' /data/etc/crontabs/root 2>/dev/null
     echo "* * * * * $MONITOR >/dev/null 2>&1 #ts_monitor" >> /data/etc/crontabs/root
 fi
-
 /etc/init.d/cron restart 2>/dev/null || true
 LEGEOF
 chmod +x "$TSDIR/starts/start_legacy.sh"
 
-# 删除旧安装残留
+# 清理残留
 rm -rf /tmp/*ailscale*.tgz
 rm -rf /tmp/ts_cron_tmp
 
-# 小米设备: 写入 snapshot_init.sh 到 /data/
+# 小米设备: 拷贝 snapshot_init.sh 到 /data/
 if [ -f /data/etc/crontabs/root ]; then
     cp "$TSDIR/scripts/starts/snapshot_init.sh" /data/tailscale_init.sh 2>/dev/null
     sed -i "s|^TSDIR=.*|TSDIR=$TSDIR|" /data/tailscale_init.sh 2>/dev/null
