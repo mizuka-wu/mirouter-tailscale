@@ -61,6 +61,19 @@ start_service() {
     comp_box "\033[32mTailscale 已启动\033[0m" \
         "PID: $PID  模式: $ts_mode"
 
+    # 子网路由审批提示
+    if [ -n "$routes" ]; then
+        separator_line "-"
+        content_line "\033[33m重要：请到 Tailscale 后台审批子网路由\033[0m"
+        content_line ""
+        content_line "  打开: \033[36mhttps://console.tailscale.com/admin/machines\033[0m"
+        content_line "  找到本设备 → 三点菜单 → Edit route settings"
+        content_line "  勾选允许 $routes"
+        content_line ""
+        content_line "  不审批的话，其他设备无法访问子网"
+    fi
+    separator_line "="
+
     setup_monitor_cron
     return 0
 }
@@ -69,7 +82,6 @@ download_binary() {
     mkdir -p "$TMP_DIR"
     echo "  正在从镜像源下载 Tailscale v${ts_version} ..."
 
-    # 构建镜像列表 (逐个参数传递，兼容 busybox ash)
     dl_urls=""
     [ -n "$pkg_url" ] && dl_urls="$pkg_url"
     dl_urls="$dl_urls https://pkgs.tailscale.com/stable/tailscale_${ts_version}_${arch}.tgz"
@@ -98,8 +110,8 @@ download_binary() {
 
 ts_up() {
     UP_ARGS="--timeout=20s"
-    [ -n "$hostname" ] && UP_ARGS="$UP_ARGS --hostname=$hostname"
     [ -n "$auth_key" ] && UP_ARGS="$UP_ARGS --authkey=$auth_key"
+    [ -n "$hostname" ] && UP_ARGS="$UP_ARGS --hostname=$hostname"
     UP_ARGS="$UP_ARGS --accept-dns=$accept_dns"
     UP_ARGS="$UP_ARGS --snat-subnet-routes=$snat_subnet"
     [ -n "$routes" ] && UP_ARGS="$UP_ARGS --advertise-routes=$routes"
