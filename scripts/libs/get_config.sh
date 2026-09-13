@@ -17,7 +17,7 @@ LOCK_FILE="/tmp/ts_monitor.lock"
 [ -z "$ts_version" ] && ts_version="1.102.4"
 [ -z "$arch" ] && arch="arm64"
 [ -z "$accept_dns" ] && accept_dns="false"
-[ -z "$snat_subnet" ] && snat_subnet="false"
+[ -z "$snat_subnet" ] && snat_subnet="true"
 [ -z "$hostname" ] && hostname="$(uname -n)"
 
 # 自动检测 tun 支持
