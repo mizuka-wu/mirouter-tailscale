@@ -19,6 +19,7 @@ CFG_PATH="$TSDIR/configs/ts.cfg"
 . "$TSDIR/scripts/libs/check_cpucore.sh"
 . "$TSDIR/scripts/libs/check_autostart.sh"
 . "$TSDIR/scripts/libs/logger.sh"
+. "$TSDIR/scripts/libs/download.sh"
 
 # TUI 界面
 . "$TSDIR/scripts/menus/tui_layout.sh"

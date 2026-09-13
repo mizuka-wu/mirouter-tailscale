@@ -23,7 +23,14 @@ LOCK_FILE="/tmp/ts_monitor.lock"
 [ -z "$network_check" ] && network_check="ON"
 
 # 计算派生变量
-PKG_URL="${pkg_url:-https://pkgs.tailscale.com/stable/tailscale_${ts_version}_${arch}.tgz}"
 BIN_TS="$TMP_DIR/tailscale"
 BIN_TSD="$TMP_DIR/tailscaled"
 STATE_FILE="$STATE_DIR/tailscaled.state"
+
+# Tailscale 二进制镜像列表 (优先国内 CDN)
+TS_PKG_MIRRORS="
+${pkg_url}
+https://ghfast.top/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz
+https://ghproxy.cn/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz
+https://pkgs.tailscale.com/stable/tailscale_${ts_version}_${arch}.tgz
+"

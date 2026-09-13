@@ -21,9 +21,6 @@ accept_dns="${accept_dns:-false}"
 snat_subnet="${snat_subnet:-false}"
 use_exit_node="${use_exit_node:-ON}"
 
-# 计算下载源
-PKG_URL="${pkg_url:-https://pkgs.tailscale.com/stable/tailscale_${ts_version}_${arch}.tgz}"
-
 # 防并发锁
 [ -f "$LOCK_FILE" ] && exit 0
 touch "$LOCK_FILE"
@@ -40,7 +37,24 @@ if ! pidof tailscaled >/dev/null 2>&1; then
         mkdir -p "$TMP_DIR"
         cd "$TMP_DIR" || exit 0
 
-        curl -L --connect-timeout 5 --max-time 120 -o tailscale.tgz "$PKG_URL" >/dev/null 2>&1 || exit 0
+        # 多镜像下载 (优先自定义源 → ghproxy → 官网)
+        download_ok=0
+        for url in \
+            "${pkg_url}" \
+            "https://ghfast.top/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz" \
+            "https://ghproxy.cn/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz" \
+            "https://pkgs.tailscale.com/stable/tailscale_${ts_version}_${arch}.tgz"; do
+
+            [ -z "$url" ] && continue
+            curl -L --connect-timeout 8 --max-time 180 -o tailscale.tgz "$url" >/dev/null 2>&1
+            if [ $? -eq 0 ] && [ -s tailscale.tgz ]; then
+                download_ok=1
+                break
+            fi
+        done
+
+        [ "$download_ok" -ne 1 ] && exit 0
+
         tar zxf tailscale.tgz >/dev/null 2>&1 || exit 0
 
         local_dir="tailscale_${ts_version}_${arch}"

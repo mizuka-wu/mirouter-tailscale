@@ -13,6 +13,7 @@
 . "$TSDIR/scripts/libs/set_cron.sh"
 . "$TSDIR/scripts/libs/check_cpucore.sh"
 . "$TSDIR/scripts/libs/logger.sh"
+. "$TSDIR/scripts/libs/download.sh"
 
 # 加载启动菜单 (用于 start_service 等函数)
 . "$TSDIR/scripts/menus/tui_layout.sh"

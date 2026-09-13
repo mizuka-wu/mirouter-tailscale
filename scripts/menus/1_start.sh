@@ -25,7 +25,8 @@ start_service() {
         separator_line "-"
         if ! download_binary; then
             comp_box "\033[31m下载失败！\033[0m" \
-                "请检查下载源或网络连接"
+                "请检查下载源或网络连接" \
+                "可在 [2] 设置 中配置局域网下载源"
             return 1
         fi
     fi
@@ -67,17 +68,18 @@ start_service() {
     return 0
 }
 
-# 下载二进制文件
+# 下载二进制文件 (多镜像 fallback)
 download_binary() {
     mkdir -p "$TMP_DIR"
-    cd "$TMP_DIR" || return 1
 
-    content_line "下载源: $PKG_URL"
-    curl -L --connect-timeout 10 --max-time 180 -o tailscale.tgz "$PKG_URL" >/dev/null 2>&1
-    if [ $? -ne 0 ]; then
+    # 尝试多镜像下载
+    ts_download "$TMP_DIR/tailscale.tgz" "$TS_PKG_MIRRORS"
+    if [ "$result" != "200" ]; then
         return 1
     fi
 
+    content_line "下载完成，正在解压..."
+    cd "$TMP_DIR" || return 1
     tar zxf tailscale.tgz >/dev/null 2>&1
     if [ $? -ne 0 ]; then
         rm -f tailscale.tgz
@@ -108,7 +110,7 @@ ts_up() {
 
 # 设置监控 cron
 setup_monitor_cron() {
-    local monitor="$TSDIR/starts/monitor.sh"
+    local monitor="$TSDIR/scripts/starts/monitor.sh"
     if [ -x "$monitor" ]; then
         cronset "ts_monitor" "* * * * * $monitor >/dev/null 2>&1 #ts_monitor"
         content_line "\033[32m已配置 cron 守护 (每分钟巡检)\033[0m"
