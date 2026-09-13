@@ -176,6 +176,8 @@ gettar() {
 
     cecho "下载完成，正在解压..."
     mkdir -p "$TSDIR"
+    # 清理旧脚本，确保新版覆盖
+    rm -rf "$TSDIR/scripts" 2>/dev/null
     tar -zxf /tmp/ts_install.tar.gz -C "$TSDIR/" 2>/dev/null
 
     if [ ! -f "$TSDIR/scripts/menu.sh" ]; then
