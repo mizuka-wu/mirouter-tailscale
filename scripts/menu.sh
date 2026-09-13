@@ -36,14 +36,15 @@ CFG_PATH="$TSDIR/configs/ts.cfg"
 # 主菜单状态检查
 ckstatus() {
     PID=$(pidof tailscaled 2>/dev/null | awk '{print $NF}')
-    if [ -n "$PID" ]; then
-        run="\033[32m运行中\033[0m (PID: $PID)"
+    if [ -n "$PID" ] && [ -x "$BIN_TS" ]; then
+        real_ver=$("$BIN_TS" version 2>/dev/null | head -1)
+        run="[32m运行中[0m (PID: $PID, v$real_ver)"
+    elif [ -n "$PID" ]; then
+        run="[32m运行中[0m (PID: $PID)"
     else
-        run="\033[31m未运行\033[0m"
+        run="[31m未运行[0m"
     fi
-    check_autostart && auto="\033[32mON\033[0m" || auto="\033[31mOFF\033[0m"
-
-    # 首次运行引导
+    check_autostart && auto="[32mON[0m" || auto="[31mOFF[0m"
     first_run_guide
 }
 
