@@ -12,7 +12,7 @@ pidof tailscaled >/dev/null 2>&1 && exit 0
 CFG_PATH="$TSDIR/configs/ts.cfg"
 [ -f "$CFG_PATH" ] || exit 1
 . "$CFG_PATH"
-gateway_ip="${gateway_ip:-192.168.1.1}"
+test_host="${test_host:-192.168.1.1}"
 
 # 等待网络就绪 (与 ShellCrash 一致: 等待 LAN 接口出现)
 i=0
@@ -25,7 +25,7 @@ done
 # 额外等待网关连通 (Tailscale 下载需要外网)
 n=0
 while [ $n -lt 20 ]; do
-    ping -c 1 -W 1 "$gateway_ip" >/dev/null 2>&1 && break
+    ping -c 1 -W 1 "$test_host" >/dev/null 2>&1 && break
     sleep 3
     n=$((n+1))
 done

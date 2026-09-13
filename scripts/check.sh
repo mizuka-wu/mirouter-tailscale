@@ -75,8 +75,8 @@ done
 
 # 6. 配置检查
 cecho "\033[1m[6/8] 配置项\033[0m"
-gateway_ip="${gateway_ip:-192.168.1.1}"
-cecho "  网关IP: $gateway_ip"
+test_host="${test_host:-192.168.1.1}"
+cecho "  测试地址: $test_host"
 if [ -n "$auth_key" ]; then
     check_pass "Auth Key 已配置"
 else
@@ -88,10 +88,10 @@ cecho "  SOCKS5 端口: ${socks_port:-1055}"
 
 # 7. 网络检查
 cecho "\033[1m[7/8] 网络连通性\033[0m"
-if ping -c 1 -W 2 "$gateway_ip" >/dev/null 2>&1; then
-    check_pass "网关 $gateway_ip 可达"
+if ping -c 1 -W 2 "$test_host" >/dev/null 2>&1; then
+    check_pass "网关 $test_host 可达"
 else
-    check_fail "网关 $gateway_ip 不可达"
+    check_fail "网关 $test_host 不可达"
 fi
 # 检查 DNS
 if ping -c 1 -W 2 pkgs.tailscale.com >/dev/null 2>&1; then

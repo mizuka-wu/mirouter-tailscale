@@ -1,13 +1,12 @@
 # Tailscale 配置文件
 # 请通过 tsm 菜单修改，不要直接编辑此文件
-gateway_ip=192.168.1.1
 auth_key=
 routes=
-socks_port=1055
-use_exit_node=ON
+test_host=223.5.5.5
+ts_mode=auto
 accept_dns=false
 snat_subnet=false
+use_exit_node=OFF
 ts_version=1.78.1
 arch=arm64
 pkg_url=
-network_check=ON

@@ -13,13 +13,13 @@ LOCK_FILE="/tmp/ts_monitor.lock"
 
 # 加载配置
 [ -f "$CFG_PATH" ] && . "$CFG_PATH"
-gateway_ip="${gateway_ip:-192.168.1.1}"
-socks_port="${socks_port:-1055}"
+test_host="${test_host:-223.5.5.5}"
 ts_version="${ts_version:-1.78.1}"
 arch="${arch:-arm64}"
 accept_dns="${accept_dns:-false}"
 snat_subnet="${snat_subnet:-false}"
-use_exit_node="${use_exit_node:-ON}"
+use_exit_node="${use_exit_node:-OFF}"
+ts_mode="${ts_mode:-userspace}"
 
 # 防并发锁
 [ -f "$LOCK_FILE" ] && exit 0
@@ -27,7 +27,7 @@ touch "$LOCK_FILE"
 trap 'rm -f "$LOCK_FILE"' EXIT
 
 # 1. 等待网络就绪
-ping -c 1 -W 1 "$gateway_ip" >/dev/null 2>&1 || exit 0
+ping -c 1 -W 1 "$test_host" >/dev/null 2>&1 || exit 0
 
 # 2. 进程不存在则拉起
 if ! pidof tailscaled >/dev/null 2>&1; then
@@ -37,7 +37,6 @@ if ! pidof tailscaled >/dev/null 2>&1; then
         mkdir -p "$TMP_DIR"
         cd "$TMP_DIR" || exit 0
 
-        # 多镜像下载: 自定义源 → 官网 → ghproxy
         download_ok=0
         for url in \
             "${pkg_url}" \
@@ -65,14 +64,23 @@ if ! pidof tailscaled >/dev/null 2>&1; then
         rm -rf tailscale.tgz "$local_dir"
     fi
 
-    # 2.2 启动 tailscaled (userspace 模式兼容原厂内核)
+    # 2.2 启动 tailscaled
     mkdir -p "$STATE_DIR"
-    "$BIN_TSD" \
-        -state "$STATE_FILE" \
-        --tun=userspace-networking \
-        --socks5-server=localhost:"$socks_port" \
-        --outbound-http-proxy-listen=localhost:"$socks_port" \
-        >/dev/null 2>&1 &
+
+    if [ "$ts_mode" = "tun" ] && [ -c /dev/net/tun ]; then
+        # Tun 模式: 内核级路由，支持子网路由和出口节点
+        "$BIN_TSD" \
+            -state "$STATE_FILE" \
+            >/dev/null 2>&1 &
+    else
+        # Userspace 模式: 兼容模式，不依赖 tun
+        "$BIN_TSD" \
+            -state "$STATE_FILE" \
+            --tun=userspace-networking \
+            --socks5-server=localhost:1055 \
+            --outbound-http-proxy-listen=localhost:1055 \
+            >/dev/null 2>&1 &
+    fi
 fi
 
 # 3. 等待服务就绪
