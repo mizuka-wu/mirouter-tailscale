@@ -14,7 +14,7 @@ settings() {
         route_display="${routes:-\033[31m未配置\033[0m}"
         [ -n "$auto_routes" ] && [ "$routes" = "$auto_routes" ] && route_display="$routes (自动检测)"
 
-        host_display="${hostname:-$(uname -n)}"
+        host_display="$hostname"
 
         comp_box "\033[30;47m Tailscale 设置 \033[0m"
         content_line "1) Auth Key       \033[36m$key_display\033[0m"

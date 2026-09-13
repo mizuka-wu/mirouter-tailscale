@@ -18,7 +18,7 @@ LOCK_FILE="/tmp/ts_monitor.lock"
 [ -z "$arch" ] && arch="arm64"
 [ -z "$accept_dns" ] && accept_dns="false"
 [ -z "$snat_subnet" ] && snat_subnet="false"
-[ -z "$hostname" ] && hostname=""
+[ -z "$hostname" ] && hostname="$(uname -n)"
 
 # 自动检测 tun 支持
 check_tun_support() {
