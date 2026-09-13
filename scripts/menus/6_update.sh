@@ -40,8 +40,9 @@ update_version() {
         ;;
     esac
 
-    if [ "$new_version" = "$ts_version" ] && [ -x "$BIN_TSD" ]; then
-        msg_alert "\033[33m版本相同且二进制已存在，无需更新\033[0m"
+    actual_running=$("$BIN_TS" version 2>/dev/null | head -1)
+    if [ "$new_version" = "$actual_running" ]; then
+        msg_alert "\033[33m版本 $actual_running 已是最新，无需更新\033[0m"
         return
     fi
 
