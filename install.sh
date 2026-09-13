@@ -154,6 +154,8 @@ setdir() {
 # ---- 下载并解压 ----
 gettar() {
     cecho "正在下载安装文件..."
+    rm -f /tmp/ts_install.tar.gz
+    rm -rf /tmp/mirouter-tailscale-main
 
     webget /tmp/ts_install.tar.gz "$SELECTED_URL"
 
