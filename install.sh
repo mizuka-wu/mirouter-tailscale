@@ -6,7 +6,8 @@
 #  用法:
 #    sh install.sh
 #
-#  远程安装:
+#  远程安装 (任选一个源):
+#    sh -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/mizuka-wu/mirouter-tailscale@main/install.sh)"
 #    sh -c "$(curl -fsSL https://raw.githubusercontent.com/mizuka-wu/mirouter-tailscale/main/install.sh)"
 # ===========================================
 
@@ -42,53 +43,55 @@ webget() {
     fi
 }
 
-# ---- 安装源 (按优先级尝试) ----
-# ShellCrash 同款镜像策略: jsdelivr CDN → ghproxy → GitHub 直连
-set_install_url() {
-    # GitHub 仓库信息
+# ---- 选择安装源 ----
+select_mirror() {
     local repo="mizuka-wu/mirouter-tailscale"
     local branch="main"
     local tar_path="archive/refs/heads/${branch}.tar.gz"
 
-    # 多源列表 (优先国内可达的 CDN)
-    MIRROR_LIST="
-https://cdn.jsdelivr.net/gh/${repo}@${branch}/install.sh|https://cdn.jsdelivr.net/gh/${repo}@${branch}/
-https://testingcf.jsdelivr.net/gh/${repo}@${branch}/install.sh|https://testingcf.jsdelivr.net/gh/${repo}@${branch}/
-https://ghfast.top/https://github.com/${repo}/archive/refs/heads/${branch}.tar.gz|https://ghfast.top/https://github.com/${repo}/archive/refs/heads/${branch}.tar.gz
-https://ghproxy.cn/https://github.com/${repo}/archive/refs/heads/${branch}.tar.gz|https://ghproxy.cn/https://github.com/${repo}/archive/refs/heads/${branch}.tar.gz
-https://github.com/${repo}/${tar_path}|https://github.com/${repo}/${tar_path}
-"
-}
+    cecho "\033[33m请选择安装源：\033[0m"
+    cecho " 1 \033[32mjsdelivr CDN\033[0m        (国内推荐)"
+    cecho " 2 \033[36mtestingcf.jsdelivr\033[0m (国内备用)"
+    cecho " 3 \033[36mghfast.top\033[0m          (GitHub 代理)"
+    cecho " 4 \033[36mghproxy.cn\033[0m           (GitHub 代理)"
+    cecho " 5 \033[33mGitHub 直连\033[0m          (需科学上网)"
+    cecho " 6 \033[33m手动输入\033[0m"
+    cecho " 0 退出安装"
+    echo "-----------------------------------------------"
+    read -p "请输入相应数字 > " num
 
-# 测试镜像连通性并选择
-select_mirror() {
-    cecho "正在选择最佳安装源..."
-    for entry in $MIRROR_LIST; do
-        local test_url=$(echo "$entry" | cut -d'|' -f1)
-        local tar_url=$(echo "$entry" | cut -d'|' -f2)
-        # 跳过空行
-        [ -z "$test_url" ] && continue
-        # 测试连通性
-        if curl --version >/dev/null 2>&1; then
-            http_code=$(curl -sL -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "$test_url" 2>/dev/null)
-            if echo "$http_code" | grep -q '^2'; then
-                SELECTED_URL="$tar_url"
-                cecho "  使用源: \033[32m$(echo $tar_url | sed 's|https://||' | cut -d'/' -f1)\033[0m"
-                return 0
-            fi
-        elif wget --version >/dev/null 2>&1; then
-            wget -q --spider --no-check-certificate --timeout=5 "$test_url" 2>/dev/null
-            if [ $? -eq 0 ]; then
-                SELECTED_URL="$tar_url"
-                cecho "  使用源: \033[32m$(echo $tar_url | sed 's|https://||' | cut -d'/' -f1)\033[0m"
-                return 0
-            fi
-        fi
-    done
+    case "$num" in
+    1)
+        SELECTED_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/${tar_path}"
+        REMOTE_INSTALL_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/install.sh"
+        ;;
+    2)
+        SELECTED_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/${tar_path}"
+        REMOTE_INSTALL_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/install.sh"
+        ;;
+    3)
+        SELECTED_URL="https://ghfast.top/https://github.com/${repo}/${tar_path}"
+        REMOTE_INSTALL_URL="https://ghfast.top/https://raw.githubusercontent.com/${repo}/${branch}/install.sh"
+        ;;
+    4)
+        SELECTED_URL="https://ghproxy.cn/https://github.com/${repo}/${tar_path}"
+        REMOTE_INSTALL_URL="https://ghproxy.cn/https://raw.githubusercontent.com/${repo}/${branch}/install.sh"
+        ;;
+    5)
+        SELECTED_URL="https://github.com/${repo}/${tar_path}"
+        REMOTE_INSTALL_URL="https://raw.githubusercontent.com/${repo}/${branch}/install.sh"
+        ;;
+    6)
+        read -p "请输入安装包 URL (tar.gz): " SELECTED_URL
+        REMOTE_INSTALL_URL="$SELECTED_URL"
+        ;;
+    *)
+        echo "安装已取消"
+        exit 0
+        ;;
+    esac
 
-    cecho "\033[31m所有安装源均不可达！\033[0m"
-    cecho "请检查路由器网络连接，或手动设置 INSTALL_URL 环境变量"
-    exit 1
+    cecho "  选定源: \033[36m$(echo $SELECTED_URL | sed 's|https://||' | cut -d'/' -f1)\033[0m"
 }
 
 # ---- 环境检查 ----
@@ -156,8 +159,9 @@ gettar() {
 
     if [ "$result" != "200" ]; then
         cecho "\033[31m下载失败！\033[0m"
-        cecho "URL: $SELECTED_URL"
-        cecho "请检查网络或设置环境变量 INSTALL_URL 指定安装源"
+        cecho "  URL: $SELECTED_URL"
+        cecho ""
+        cecho "请检查网络，或重新运行选择其他安装源"
         exit 1
     fi
 
@@ -165,12 +169,10 @@ gettar() {
     mkdir -p "$TSDIR"
     tar -zxf /tmp/ts_install.tar.gz -C /tmp/ 2>/dev/null
 
-    # GitHub archive 解压后的目录名
     local src_dir="/tmp/mirouter-tailscale-main"
     if [ -d "$src_dir/scripts" ]; then
         cp -rf "$src_dir/scripts"/* "$TSDIR/" 2>/dev/null
-        # 也复制 configs 目录
-        [ -d "$src_dir/configs" ] && cp -rf "$src_dir/configs"/* "$TSDIR/configs/" 2>/dev/null
+        [ -d "$src_dir/configs" ] && mkdir -p "$TSDIR/configs" && cp -rf "$src_dir/configs"/* "$TSDIR/configs/" 2>/dev/null
     else
         cecho "\033[31m解压失败，请检查安装包\033[0m"
         rm -rf /tmp/ts_install.tar.gz
@@ -236,6 +238,5 @@ check_user
 check_systype
 check_arch
 setdir
-set_install_url
 select_mirror
 check_dir

@@ -8,6 +8,10 @@
 
 ```sh
 # SSH 登录路由器后执行
+# 国内推荐
+sh -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/mizuka-wu/mirouter-tailscale@main/install.sh)"
+
+# 备用
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/mizuka-wu/mirouter-tailscale/main/install.sh)"
 ```
 
