@@ -111,6 +111,7 @@ setdir() {
     mi_snapshot)
         cecho "\033[33m检测到小米设备，安装到 /data 目录\033[0m"
         cecho "  /data 剩余空间: $(dir_avail /data -h)"
+        cecho "  安装占用约 100KB (脚本+配置，Tailscale 二进制约 50MB 在内存中运行)"
         dir=/data
         ;;
     *)
@@ -230,15 +231,12 @@ post_install_info() {
         cecho ""
         cecho "  \033[33m连接方式:\033[0m"
         cecho "    需要在客户端设备上配置 SOCKS5 代理:"
-        cecho "    代理地址: 路由器IP:${SOCKS_PORT:-1055}"
+        cecho "    代理地址: 路由器IP:1055"
         cecho ""
         cecho "    例如 Surge (iPhone):"
         cecho "      代理类型: SOCKS5"
         cecho "      地址: 192.168.3.1"
         cecho "      端口: 1055"
-        cecho ""
-        cecho "    或者 curl 测试:"
-        cecho "      curl -x socks5://192.168.3.1:1055 http://NAS_IP"
         cecho ""
         cecho "  \033[36m如果需要完整的子网路由功能:\033[0m"
         cecho "    方案1: 在 NAS 上直接安装 Tailscale (推荐)"
