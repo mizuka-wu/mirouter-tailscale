@@ -31,6 +31,7 @@ CFG_PATH="$TSDIR/configs/ts.cfg"
 . "$TSDIR/scripts/menus/5_status.sh"
 . "$TSDIR/scripts/menus/6_update.sh"
 . "$TSDIR/scripts/menus/uninstall.sh"
+. "$TSDIR/scripts/menus/first_run_guide.sh"
 
 # 主菜单状态检查
 ckstatus() {
@@ -42,12 +43,8 @@ ckstatus() {
     fi
     check_autostart && auto="\033[32mON\033[0m" || auto="\033[31mOFF\033[0m"
 
-    # 首次运行检查: 无配置则引导
-    if [ -z "$auth_key" ] && [ ! -f "$TSDIR/.initialized" ]; then
-        comp_box "\033[33m首次使用，请先进行配置\033[0m"
-        settings
-        touch "$TSDIR/.initialized"
-    fi
+    # 首次运行引导
+    first_run_guide
 }
 
 # 主菜单

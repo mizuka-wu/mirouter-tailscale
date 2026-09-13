@@ -3,12 +3,8 @@
 #  Tailscale 一键安装脚本 (小米路由器)
 #  参考 ShellCrash 安装模式
 #
-#  用法:
-#    sh install.sh
-#
-#  远程安装 (任选一个源):
+#  远程安装:
 #    sh -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/mizuka-wu/mirouter-tailscale@main/install.sh?$(date +%s))"
-#    sh -c "$(curl -fsSL https://raw.githubusercontent.com/mizuka-wu/mirouter-tailscale/main/install.sh)"
 # ===========================================
 
 echo ""
@@ -28,11 +24,7 @@ dir_avail() {
     df -h >/dev/null 2>&1 && h="$2"
     df -P $h "${1:-.}" 2>/dev/null | awk 'NR==2 {print $4}'
 }
-ckcmd() {
-    command -v "$1" >/dev/null 2>&1
-}
 webget() {
-    # $1=保存路径 $2=URL
     result=""
     if curl --version >/dev/null 2>&1; then
         result=$(curl -w %{http_code} --connect-timeout 8 --max-time 120 -sLko "$1" "$2")
@@ -63,27 +55,21 @@ select_mirror() {
     case "$num" in
     1)
         SELECTED_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/${tar_file}?$(date +%s)"
-        REMOTE_INSTALL_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/install.sh"
         ;;
     2)
         SELECTED_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/${tar_file}?$(date +%s)"
-        REMOTE_INSTALL_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/install.sh"
         ;;
     3)
         SELECTED_URL="https://ghfast.top/https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
-        REMOTE_INSTALL_URL="https://ghfast.top/https://raw.githubusercontent.com/${repo}/${branch}/install.sh"
         ;;
     4)
         SELECTED_URL="https://ghproxy.cn/https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
-        REMOTE_INSTALL_URL="https://ghproxy.cn/https://raw.githubusercontent.com/${repo}/${branch}/install.sh"
         ;;
     5)
         SELECTED_URL="https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
-        REMOTE_INSTALL_URL="https://raw.githubusercontent.com/${repo}/${branch}/install.sh"
         ;;
     6)
         read -p "请输入安装包 URL (tar.gz): " SELECTED_URL
-        REMOTE_INSTALL_URL="$SELECTED_URL"
         ;;
     *)
         echo "安装已取消"
@@ -151,11 +137,31 @@ setdir() {
     TSDIR="$dir/tailscale"
 }
 
+# ---- Tun 检测 ----
+check_tun() {
+    if [ -c /dev/net/tun ]; then
+        TUN_AVAILABLE=1
+    else
+        modprobe tun 2>/dev/null
+        [ -c /dev/net/tun ] && TUN_AVAILABLE=1 || TUN_AVAILABLE=0
+    fi
+}
+
+# ---- 自动检测子网 ----
+detect_subnet() {
+    local lan_ip
+    lan_ip=$(ubus call network.interface.lan status 2>/dev/null | grep -oE '"address":"[0-9.]+"' | grep -oE '[0-9.]+')
+    [ -z "$lan_ip" ] && lan_ip=$(ip addr show br-lan 2>/dev/null | grep 'inet ' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    [ -z "$lan_ip" ] && lan_ip=$(ip route 2>/dev/null | grep 'src' | grep -v 'default' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    if [ -n "$lan_ip" ]; then
+        DETECTED_SUBNET=$(echo "$lan_ip" | sed 's/\.[0-9]*$/.0\/24/')
+    fi
+}
+
 # ---- 下载并解压 ----
 gettar() {
     cecho "正在下载安装文件..."
     rm -f /tmp/ts_install.tar.gz
-    rm -rf /tmp/mirouter-tailscale-main
 
     webget /tmp/ts_install.tar.gz "$SELECTED_URL"
 
@@ -180,6 +186,73 @@ gettar() {
     rm -rf /tmp/ts_install.tar.gz
 }
 
+# ---- 安装后提示 ----
+post_install_info() {
+    echo ""
+    separator="=============================================="
+
+    cecho "\033[36m$separator\033[0m"
+    cecho "\033[36m  运行模式说明\033[0m"
+    cecho "\033[36m$separator\033[0m"
+
+    if [ "$TUN_AVAILABLE" = "1" ]; then
+        cecho ""
+        cecho "  \033[32m✓ Tun 模式\033[0m (当前设备已支持)"
+        cecho ""
+        cecho "  Tun 模式下 Tailscale 创建虚拟网卡，内核级路由。"
+        cecho "  这是子网路由 (subnet routing) 的工作模式。"
+        cecho ""
+        cecho "  工作原理:"
+        cecho "    iPhone (Tailscale) → 路由器 tun 网卡 → LAN → NAS"
+        cecho ""
+        cecho "  其他 Tailscale 设备可以直接访问你宣告的子网"
+        cecho "  例如: NAS (192.168.3.x)、路由器管理页等"
+        cecho "  设备无需任何代理配置，直接通过 IP 访问"
+        cecho ""
+        cecho "  \033[33m配置步骤:\033[0m"
+        cecho "    1. 输入 tsm 打开菜单"
+        cecho "    2. [1] 填入 Auth Key"
+        cecho "    3. [2] 确认子网路由 (自动检测: ${DETECTED_SUBNET:-请手动填写})"
+        cecho "    4. [1] 启动服务"
+        cecho "    5. iPhone 上安装 Tailscale/Surge 登录同一账号"
+        cecho "    6. 直接访问 NAS IP 即可"
+    else
+        cecho ""
+        cecho "  \033[33m✗ Tun 不可用\033[0m → 自动使用 Userspace 模式"
+        cecho ""
+        cecho "  当前内核不支持 /dev/net/tun，无法创建虚拟网卡。"
+        cecho "  Tailscale 通过 SOCKS5 代理端口 (默认1055) 提供服务。"
+        cecho ""
+        cecho "  \033[33m限制:\033[0m"
+        cecho "    - 子网路由 (advertise-routes) 功能受限"
+        cecho "    - 其他设备无法直接通过 IP 访问内网"
+        cecho "    - 只有支持 SOCKS5 代理的应用才能走 Tailscale"
+        cecho ""
+        cecho "  \033[33m连接方式:\033[0m"
+        cecho "    需要在客户端设备上配置 SOCKS5 代理:"
+        cecho "    代理地址: 路由器IP:${SOCKS_PORT:-1055}"
+        cecho ""
+        cecho "    例如 Surge (iPhone):"
+        cecho "      代理类型: SOCKS5"
+        cecho "      地址: 192.168.3.1"
+        cecho "      端口: 1055"
+        cecho ""
+        cecho "    或者 curl 测试:"
+        cecho "      curl -x socks5://192.168.3.1:1055 http://NAS_IP"
+        cecho ""
+        cecho "  \033[36m如果需要完整的子网路由功能:\033[0m"
+        cecho "    方案1: 在 NAS 上直接安装 Tailscale (推荐)"
+        cecho "    方案2: 尝试加载 tun 内核模块 (需要 tun.ko)"
+        cecho "    方案3: 使用 ShellCrash 的 tun 安装方案"
+    fi
+
+    cecho ""
+    cecho "\033[36m$separator\033[0m"
+    cecho "\033[32m  安装完成！输入 tsm 开始配置\033[0m"
+    cecho "\033[36m$separator\033[0m"
+    cecho ""
+}
+
 # ---- 执行安装 ----
 install() {
     echo "-----------------------------------------------"
@@ -191,14 +264,9 @@ install() {
     export TSDIR
     . "$TSDIR/scripts/init.sh"
 
-    echo "-----------------------------------------------"
-    cecho "\033[32m安装成功！\033[0m"
-    cecho ""
-    cecho "  输入 \033[30;47m tsm \033[0m 命令即可管理 Tailscale"
-    cecho ""
-    cecho "  首次使用会自动引导配置 Auth Key 和子网路由"
-    cecho "  Auth Key: \033[36mhttps://login.tailscale.com/admin/settings/keys\033[0m"
-    echo "-----------------------------------------------"
+    check_tun
+    detect_subnet
+    post_install_info
 }
 
 # ---- 检查旧安装 ----
