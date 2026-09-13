@@ -38,7 +38,7 @@ tsm -s status          # 命令行查看状态
 ## 典型场景：远程访问家庭 NAS
 
 ```
-外网 iPhone (Tailscale/Surge)
+外网 iPhone (Tailscale)
         │
         ▼ Tailscale 网络
 小米路由器 (Tailscale subnet router, 宣告 192.168.3.0/24)
@@ -55,29 +55,8 @@ NAS (192.168.3.x)
 4. `tsm` → [3] 确认子网路由（自动检测，如 192.168.3.0/24）
 5. [1] 启动服务
 6. 去 https://console.tailscale.com/admin/machines → 找到路由器 → Edit route settings → 勾选允许子网
-7. iPhone 安装 Tailscale 或配置 Surge，登录同一账号
+7. iPhone 安装 Tailscale 客户端，登录同一账号
 8. 直接访问 NAS IP
-
-### Surge 配置示例
-
-```
-[Proxy]
-Tailscale mizuka = tailscale, section-name=mizuka
-
-[Policy Group]
-家庭子网 = select, DIRECT, Tailscale mizuka
-
-[SSID Policy]
-你的WiFi名称 = 家庭子网:DIRECT
-
-[Rule]
-DOMAIN-SUFFIX,ts.net,Tailscale mizuka
-IP-CIDR,100.64.0.0/10,Tailscale mizuka,no-resolve
-IP-CIDR,192.168.3.0/24,家庭子网,no-resolve
-```
-
-- 在家连 WiFi → 直连 NAS
-- 外出用蜂窝 → 走 Tailscale 访问 NAS
 
 ## 设置菜单
 
@@ -196,7 +175,7 @@ firewall include 触发 snapshot_init.sh
 ### 无法访问子网设备？
 1. 确认已在 https://console.tailscale.com/admin/machines 审批子网路由
 2. 确认 SNAT 已开启（默认已开启）
-3. 如果通过 Surge 访问，确认 Surge 规则包含子网 IP 段
+3. 确认客户端已连接 Tailscale 并登录同一账号
 
 ### 占用多少闪存？
 约 100KB。二进制在内存中运行，不占闪存。
