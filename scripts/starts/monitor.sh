@@ -116,6 +116,7 @@ done
 
 # 4. 执行上线
 UP_ARGS="--timeout=20s"
+[ -n "$hostname" ] && UP_ARGS="$UP_ARGS --hostname=$hostname"
 [ -n "$auth_key" ] && UP_ARGS="$UP_ARGS --authkey=$auth_key"
 UP_ARGS="$UP_ARGS --accept-dns=$accept_dns"
 UP_ARGS="$UP_ARGS --snat-subnet-routes=$snat_subnet"

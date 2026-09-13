@@ -26,6 +26,7 @@ show_status() {
     content_line "子网路由:  ${routes:-未配置}"
     content_line "测试地址:  $test_host"
     content_line "版本:     $ts_version ($arch)"
+    content_line "节点名:   ${hostname:-$(uname -n)}"
 
     if [ -n "$PID" ] && [ -x "$BIN_TS" ]; then
         separator_line "-"

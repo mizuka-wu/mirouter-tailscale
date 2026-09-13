@@ -1,5 +1,6 @@
 # Tailscale 配置文件 (通过 tsm 菜单修改)
 auth_key=
+hostname=
 routes=
 test_host=223.5.5.5
 accept_dns=false
