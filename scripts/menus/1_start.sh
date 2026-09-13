@@ -42,7 +42,7 @@ start_service() {
     fi
 
     content_line "等待 tailscaled 就绪..."
-    local i=0
+    i=0
     while [ $i -lt 20 ]; do
         "$BIN_TS" status >/dev/null 2>&1 && break
         sleep 1
@@ -57,7 +57,7 @@ start_service() {
 
     ts_up
 
-    local PID=$(pidof tailscaled | awk '{print $NF}')
+    PID=$(pidof tailscaled | awk '{print $NF}')
     comp_box "\033[32mTailscale 已启动\033[0m" \
         "PID: $PID  模式: $ts_mode"
 
@@ -67,11 +67,20 @@ start_service() {
 
 download_binary() {
     mkdir -p "$TMP_DIR"
-        echo "  正在从镜像源下载 Tailscale v${ts_version} ..."
-    ts_download "$TMP_DIR/tailscale.tgz" "$TS_PKG_MIRRORS"
+    echo "  正在从镜像源下载 Tailscale v${ts_version} ..."
+
+    # 构建镜像列表 (逐个参数传递，兼容 busybox ash)
+    dl_urls=""
+    [ -n "$pkg_url" ] && dl_urls="$pkg_url"
+    dl_urls="$dl_urls https://pkgs.tailscale.com/stable/tailscale_${ts_version}_${arch}.tgz"
+    dl_urls="$dl_urls https://ghfast.top/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz"
+    dl_urls="$dl_urls https://ghproxy.cn/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz"
+
+    ts_download "$TMP_DIR/tailscale.tgz" $dl_urls
     if [ "$result" != "200" ]; then
         return 1
     fi
+
     content_line "下载完成，正在解压..."
     cd "$TMP_DIR" || return 1
     tar zxf tailscale.tgz >/dev/null 2>&1
@@ -79,7 +88,7 @@ download_binary() {
         rm -f tailscale.tgz
         return 1
     fi
-    local local_dir="tailscale_${ts_version}_${arch}"
+    local_dir="tailscale_${ts_version}_${arch}"
     mv "$local_dir/tailscale" "$TMP_DIR/" 2>/dev/null
     mv "$local_dir/tailscaled" "$TMP_DIR/" 2>/dev/null
     chmod +x "$BIN_TS" "$BIN_TSD"
@@ -88,7 +97,7 @@ download_binary() {
 }
 
 ts_up() {
-    local UP_ARGS="--timeout=20s"
+    UP_ARGS="--timeout=20s"
     [ -n "$auth_key" ] && UP_ARGS="$UP_ARGS --authkey=$auth_key"
     UP_ARGS="$UP_ARGS --accept-dns=$accept_dns"
     UP_ARGS="$UP_ARGS --snat-subnet-routes=$snat_subnet"
@@ -98,7 +107,7 @@ ts_up() {
 }
 
 setup_monitor_cron() {
-    local monitor="$TSDIR/scripts/starts/monitor.sh"
+    monitor="$TSDIR/scripts/starts/monitor.sh"
     if [ -x "$monitor" ]; then
         cronset "ts_monitor" "* * * * * $monitor >/dev/null 2>&1 #ts_monitor"
         content_line "\033[32m已配置 cron 守护 (每分钟巡检)\033[0m"

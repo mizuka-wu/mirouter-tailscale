@@ -66,4 +66,3 @@ BIN_TSD="$TMP_DIR/tailscaled"
 STATE_FILE="$STATE_DIR/tailscaled.state"
 
 # Tailscale 二进制下载镜像列表
-TS_PKG_MIRRORS="${pkg_url} https://pkgs.tailscale.com/stable/tailscale_${ts_version}_${arch}.tgz https://ghfast.top/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz https://ghproxy.cn/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz"

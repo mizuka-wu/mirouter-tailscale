@@ -1,40 +1,28 @@
 # 多镜像下载工具
-# 用法: ts_download <保存路径> <镜像列表(换行分隔)>
+# 用法: ts_download <保存路径> <URL1> <URL2> ...
 # 返回: result=200 成功
 
 ts_download() {
-    local save_path="$1"
-    local mirrors="$2"
+    save_path="$1"
+    shift
     result=""
 
-    for url in $mirrors; do
+    for url in "$@"; do
         [ -z "$url" ] && continue
 
-        # 显示正在尝试的源
-        local host=$(echo "$url" | sed 's|https\?://||' | cut -d'/' -f1)
+        host=$(echo "$url" | sed 's|https\?://||' | cut -d'/' -f1)
         echo "  尝试: $host ..."
 
-        if curl --version >/dev/null 2>&1; then
-            local http_code
-            http_code=$(curl -w %{http_code} --connect-timeout 10 --max-time 300 -Lko "$save_path" "$url" 2>/tmp/ts_curl_err.log)
-            if echo "$http_code" | grep -q '^2' && [ -s "$save_path" ]; then
-                result="200"
-                echo "  ✓ 下载成功: $host"
-                return 0
-            else
-                local err=$(cat /tmp/ts_curl_err.log 2>/dev/null | tail -1)
-                echo "  ✗ 失败 (HTTP $http_code): $err"
-            fi
-        elif wget --version >/dev/null 2>&1; then
-            wget --no-check-certificate --timeout=10 -O "$save_path" "$url" 2>/tmp/ts_wget_err.log
-            if [ $? -eq 0 ] && [ -s "$save_path" ]; then
-                result="200"
-                echo "  ✓ 下载成功: $host"
-                return 0
-            else
-                local err=$(cat /tmp/ts_wget_err.log 2>/dev/null | tail -1)
-                echo "  ✗ 失败: $err"
-            fi
+        curl -w "%{http_code}" --connect-timeout 10 --max-time 300 -sLko "$save_path" "$url" 2>/dev/null > /tmp/ts_dl_code.txt
+        http_code=$(cat /tmp/ts_dl_code.txt 2>/dev/null)
+
+        if echo "$http_code" | grep -q '^2' && [ -s "$save_path" ]; then
+            result="200"
+            echo "  ✓ 下载成功: $host"
+            rm -f /tmp/ts_dl_code.txt
+            return 0
+        else
+            echo "  ✗ 失败 (HTTP $http_code)"
         fi
 
         rm -f "$save_path" 2>/dev/null
@@ -42,6 +30,6 @@ ts_download() {
 
     echo ""
     echo "  所有下载源均失败"
-    rm -f /tmp/ts_curl_err.log /tmp/ts_wget_err.log
+    rm -f /tmp/ts_dl_code.txt
     return 1
 }
