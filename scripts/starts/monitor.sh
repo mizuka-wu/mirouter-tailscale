@@ -37,13 +37,13 @@ if ! pidof tailscaled >/dev/null 2>&1; then
         mkdir -p "$TMP_DIR"
         cd "$TMP_DIR" || exit 0
 
-        # 多镜像下载 (优先自定义源 → ghproxy → 官网)
+        # 多镜像下载: 自定义源 → 官网 → ghproxy
         download_ok=0
         for url in \
             "${pkg_url}" \
+            "https://pkgs.tailscale.com/stable/tailscale_${ts_version}_${arch}.tgz" \
             "https://ghfast.top/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz" \
-            "https://ghproxy.cn/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz" \
-            "https://pkgs.tailscale.com/stable/tailscale_${ts_version}_${arch}.tgz"; do
+            "https://ghproxy.cn/https://github.com/tailscale/tailscale/releases/download/v${ts_version}/tailscale_${ts_version}_${arch}.tgz"; do
 
             [ -z "$url" ] && continue
             curl -L --connect-timeout 8 --max-time 180 -o tailscale.tgz "$url" >/dev/null 2>&1

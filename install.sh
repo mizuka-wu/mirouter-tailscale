@@ -47,7 +47,7 @@ webget() {
 select_mirror() {
     local repo="mizuka-wu/mirouter-tailscale"
     local branch="main"
-    local tar_path="archive/refs/heads/${branch}.tar.gz"
+    local tar_file="mirouter-tailscale.tar.gz"
 
     cecho "\033[33m请选择安装源：\033[0m"
     cecho " 1 \033[32mjsdelivr CDN\033[0m        (国内推荐)"
@@ -62,23 +62,23 @@ select_mirror() {
 
     case "$num" in
     1)
-        SELECTED_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/${tar_path}"
+        SELECTED_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/${tar_file}"
         REMOTE_INSTALL_URL="https://cdn.jsdelivr.net/gh/${repo}@${branch}/install.sh"
         ;;
     2)
-        SELECTED_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/${tar_path}"
+        SELECTED_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/${tar_file}"
         REMOTE_INSTALL_URL="https://testingcf.jsdelivr.net/gh/${repo}@${branch}/install.sh"
         ;;
     3)
-        SELECTED_URL="https://ghfast.top/https://github.com/${repo}/${tar_path}"
+        SELECTED_URL="https://ghfast.top/https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
         REMOTE_INSTALL_URL="https://ghfast.top/https://raw.githubusercontent.com/${repo}/${branch}/install.sh"
         ;;
     4)
-        SELECTED_URL="https://ghproxy.cn/https://github.com/${repo}/${tar_path}"
+        SELECTED_URL="https://ghproxy.cn/https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
         REMOTE_INSTALL_URL="https://ghproxy.cn/https://raw.githubusercontent.com/${repo}/${branch}/install.sh"
         ;;
     5)
-        SELECTED_URL="https://github.com/${repo}/${tar_path}"
+        SELECTED_URL="https://raw.githubusercontent.com/${repo}/${branch}/${tar_file}"
         REMOTE_INSTALL_URL="https://raw.githubusercontent.com/${repo}/${branch}/install.sh"
         ;;
     6)
@@ -167,19 +167,15 @@ gettar() {
 
     cecho "下载完成，正在解压..."
     mkdir -p "$TSDIR"
-    tar -zxf /tmp/ts_install.tar.gz -C /tmp/ 2>/dev/null
+    tar -zxf /tmp/ts_install.tar.gz -C "$TSDIR/" 2>/dev/null
 
-    local src_dir="/tmp/mirouter-tailscale-main"
-    if [ -d "$src_dir/scripts" ]; then
-        cp -rf "$src_dir/scripts"/* "$TSDIR/" 2>/dev/null
-        [ -d "$src_dir/configs" ] && mkdir -p "$TSDIR/configs" && cp -rf "$src_dir/configs"/* "$TSDIR/configs/" 2>/dev/null
-    else
+    if [ ! -f "$TSDIR/scripts/menu.sh" ]; then
         cecho "\033[31m解压失败，请检查安装包\033[0m"
         rm -rf /tmp/ts_install.tar.gz
         exit 1
     fi
 
-    rm -rf /tmp/ts_install.tar.gz "$src_dir"
+    rm -rf /tmp/ts_install.tar.gz
 }
 
 # ---- 执行安装 ----
