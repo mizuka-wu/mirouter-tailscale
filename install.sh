@@ -7,7 +7,7 @@
 #    sh install.sh
 #
 #  远程安装:
-#    sh -c "$(curl -fsSL https://raw.githubusercontent.com/YOUR_USER/mirouter-tailscale/main/install.sh)"
+#    sh -c "$(curl -fsSL https://raw.githubusercontent.com/mizuka-wu/mirouter-tailscale/main/install.sh)"
 # ===========================================
 
 echo ""
@@ -103,7 +103,7 @@ gettar() {
     cecho "正在从 GitHub 获取安装文件..."
 
     # 下载 (支持 GitHub release 或直接 tar.gz)
-    local url="${INSTALL_URL:-https://github.com/YOUR_USER/mirouter-tailscale/archive/refs/heads/main.tar.gz}"
+    local url="${INSTALL_URL:-https://github.com/mizuka-wu/mirouter-tailscale/archive/refs/heads/main.tar.gz}"
     webget /tmp/ts_install.tar.gz "$url"
 
     if [ "$result" != "200" ]; then

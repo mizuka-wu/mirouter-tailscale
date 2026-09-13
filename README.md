@@ -62,7 +62,7 @@ firewall include 触发 snapshot_init.sh
 
 ```sh
 # SSH 登录路由器后
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/YOUR_USER/mirouter-tailscale/main/install.sh)"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/mizuka-wu/mirouter-tailscale/main/install.sh)"
 ```
 
 ## 使用
