@@ -20,6 +20,7 @@ CFG_PATH="$TSDIR/configs/ts.cfg"
 . "$TSDIR/scripts/libs/check_autostart.sh"
 . "$TSDIR/scripts/libs/logger.sh"
 . "$TSDIR/scripts/libs/download.sh"
+. "$TSDIR/scripts/libs/version.sh"
 
 # TUI 界面
 . "$TSDIR/scripts/menus/tui_layout.sh"
@@ -53,8 +54,11 @@ main_menu() {
     while true; do
         ckstatus
 
-        top_box "\033[30;47m Tailscale 管理脚本 \033[0m"
+        top_box "\033[30;47m Tailscale 管理脚本 v${SCRIPT_VERSION} \033[0m"
         content_line "运行状态: $run  |  自启: $auto"
+        # 检查脚本更新 (静默，失败不影响)
+        script_update_msg=$(check_script_update 2>/dev/null)
+        [ -n "$script_update_msg" ] && content_line "$script_update_msg"
         separator_line "-"
         btm_box "1) \033[32m启动服务\033[0m" \
             "2) \033[36m设置\033[0m" \
