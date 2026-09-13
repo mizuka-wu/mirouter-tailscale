@@ -1,12 +1,9 @@
-# Tailscale 配置文件
-# 请通过 tsm 菜单修改，不要直接编辑此文件
+# Tailscale 配置文件 (通过 tsm 菜单修改)
 auth_key=
 routes=
 test_host=223.5.5.5
-ts_mode=auto
 accept_dns=false
 snat_subnet=false
-use_exit_node=OFF
 ts_version=1.78.1
 arch=arm64
 pkg_url=

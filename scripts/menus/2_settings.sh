@@ -5,16 +5,20 @@ settings() {
         local key_display="未配置"
         [ -n "$auth_key" ] && key_display="${auth_key:0:12}..."
 
+        # 模式显示
         if [ "$ts_mode" = "tun" ]; then
-            mode_display="\033[32mTun\033[0m"
+            mode_display="\033[32mTun\033[0m (内核路由)"
         else
-            mode_display="\033[33mUserspace\033[0m"
+            mode_display="\033[33mUserspace\033[0m (兼容模式)"
         fi
-        [ "$tun_available" != "1" ] && mode_display="$mode_display \033[31m(无tun)\033[0m"
+
+        # 路由显示
+        local route_display="${routes:-\033[31m未配置\033[0m}"
+        [ -n "$auto_routes" ] && [ "$routes" = "$auto_routes" ] && route_display="$routes (自动检测)"
 
         comp_box "\033[30;47m Tailscale 设置 \033[0m"
         content_line "1) Auth Key       \033[36m$key_display\033[0m"
-        content_line "2) 子网路由       \033[36m${routes:-未配置}\033[0m"
+        content_line "2) 子网路由       \033[36m$route_display\033[0m"
         content_line "3) 运行模式       $mode_display"
         content_line "4) 测试地址       \033[36m$test_host\033[0m"
         content_line "5) Tailscale 版本 \033[36m$ts_version\033[0m"
@@ -38,41 +42,31 @@ settings() {
         2)
             comp_box "\033[36m子网路由\033[0m" \
                 "宣告给 Tailscale 的内网网段" \
-                "其他 Tailscale 设备可通过此路由访问你的内网" \
+                "其他 Tailscale 设备可通过此访问你的内网 (如 NAS)" \
                 "" \
-                "例如路由器是 192.168.3.1:" \
-                "  填 192.168.3.0/24" \
-                "  NAS (192.168.3.x) 就能被远程访问"
+                "多个网段用逗号分隔: 192.168.3.0/24,192.168.1.0/24"
+            if [ -n "$auto_routes" ]; then
+                content_line ""
+                content_line "自动检测到: \033[32m$auto_routes\033[0m"
+            fi
             separator_line "-"
-            read -r -p "子网路由: " input
+            read -r -p "子网路由 [${routes}]: " input
             [ -n "$input" ] && setconfig routes "$input" && routes="$input"
             ;;
         3)
             comp_box "\033[36m运行模式\033[0m" \
-                "\033[32mTun\033[0m — 内核级路由，子网路由必须用这个" \
-                "  需要 /dev/net/tun，小米 AX6000 等设备支持" \
+                "\033[32mTun\033[0m: 内核级路由，子网路由必须用这个" \
+                "  需要 /dev/net/tun，小米 AX6000 等支持" \
                 "" \
-                "\033[33mUserspace\033[0m — 兼容模式，不依赖 tun" \
-                "  通过 SOCKS5 代理工作，其他设备需配代理" \
-                "  子网路由功能受限"
+                "\033[33mUserspace\033[0m: 兼容模式，不依赖 tun" \
+                "  通过 SOCKS5 代理工作，子网路由受限"
             separator_line "-"
             if [ "$tun_available" = "1" ]; then
-                content_line "当前内核: \033[32m支持 Tun\033[0m"
+                content_line "当前内核: \033[32m支持 Tun\033[0m → 自动选择 Tun 模式"
             else
-                content_line "当前内核: \033[31m不支持 Tun\033[0m"
+                content_line "当前内核: \033[31m不支持 Tun\033[0m → 自动选择 Userspace 模式"
             fi
-            separator_line "-"
-            if [ "$tun_available" = "1" ]; then
-                if [ "$ts_mode" = "tun" ]; then
-                    read -r -p "切换为 Userspace? [y/N]: " x
-                    case "$x" in [yY]*) setconfig ts_mode userspace && ts_mode="userspace"; msg_alert "已切换" ;; esac
-                else
-                    read -r -p "切换为 Tun? [y/N]: " x
-                    case "$x" in [yY]*) setconfig ts_mode tun && ts_mode="tun"; msg_alert "已切换" ;; esac
-                fi
-            else
-                msg_alert "\033[33m内核不支持 Tun，无法切换\033[0m"
-            fi
+            separator_line "="
             ;;
         4)
             read -r -p "网络测试地址 (检测网络就绪) [$test_host]: " input

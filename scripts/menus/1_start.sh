@@ -92,7 +92,6 @@ ts_up() {
     UP_ARGS="$UP_ARGS --accept-dns=$accept_dns"
     UP_ARGS="$UP_ARGS --snat-subnet-routes=$snat_subnet"
     [ -n "$routes" ] && UP_ARGS="$UP_ARGS --advertise-routes=$routes"
-    [ "$use_exit_node" = "ON" ] && UP_ARGS="$UP_ARGS --advertise-exit-node"
     # shellcheck disable=SC2086
     "$BIN_TS" up $UP_ARGS >/dev/null 2>&1
 }

@@ -18,7 +18,6 @@ ts_version="${ts_version:-1.78.1}"
 arch="${arch:-arm64}"
 accept_dns="${accept_dns:-false}"
 snat_subnet="${snat_subnet:-false}"
-use_exit_node="${use_exit_node:-OFF}"
 ts_mode="${ts_mode:-userspace}"
 
 # 防并发锁
@@ -97,7 +96,6 @@ UP_ARGS="--timeout=20s"
 UP_ARGS="$UP_ARGS --accept-dns=$accept_dns"
 UP_ARGS="$UP_ARGS --snat-subnet-routes=$snat_subnet"
 [ -n "$routes" ] && UP_ARGS="$UP_ARGS --advertise-routes=$routes"
-[ "$use_exit_node" = "ON" ] && UP_ARGS="$UP_ARGS --advertise-exit-node"
 
 # shellcheck disable=SC2086
 "$BIN_TS" up $UP_ARGS >/dev/null 2>&1
