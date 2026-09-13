@@ -87,6 +87,9 @@ settings() {
             read -r -p "Tailscale 版本号 [$ts_version]: " input
             if [ -n "$input" ]; then
                 setconfig ts_version "$input" && ts_version="$input"
+                # 版本变更，清除旧二进制，下次启动自动下载新版
+                rm -rf "$TMP_DIR" 2>/dev/null
+                echo "  已清除旧版本，下次启动将自动下载 v${input}"
                 setconfig pkg_url "" && pkg_url=""
             fi
             ;;
