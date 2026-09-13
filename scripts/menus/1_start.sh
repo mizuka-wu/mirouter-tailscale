@@ -67,6 +67,7 @@ start_service() {
 
 download_binary() {
     mkdir -p "$TMP_DIR"
+        echo "  正在从镜像源下载 Tailscale v${ts_version} ..."
     ts_download "$TMP_DIR/tailscale.tgz" "$TS_PKG_MIRRORS"
     if [ "$result" != "200" ]; then
         return 1
